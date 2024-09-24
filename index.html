@@ -24,15 +24,32 @@
             border: 1px solid black;
             display: none; /* Hide the canvas */
         }
+
+        #imagePreview {
+            max-width: 100%;
+            margin-top: 1rem;
+        }
+
+        #outputMessage {
+            margin-top: 1rem;
+        }
     </style>
 </head>
 
 <body>
-    <input type="file" id="uploadImage" accept="image/*" />
-    <input type="text" id="eKey" value="eKey" />
-    <button onclick="decodeImage()">Decode Image</button>
-    <canvas id="canvas"></canvas>
-    <div id="outputMessage"></div>
+    <main>
+        <input type="file" id="uploadImage" accept="image/*" />
+        <select id="paletteSelect">
+            <option value="eKey">eKey</option>
+            <option value="BEE">BEE</option>
+            <!-- Add more palette options as needed -->
+        </select>
+        <button onclick="decodeImage()">Decode Image</button>
+        <button onclick="clearOutput()">Clear Output</button>
+        <img id="imagePreview" alt="Uploaded Image Preview" />
+        <canvas id="canvas"></canvas>
+        <div id="outputMessage"></div>
+    </main>
     <script>
         const palettes = {
             'eKey': {  
@@ -80,11 +97,11 @@
                 '7FFF00': '...'
             },
             'BEE': {
-                'ffff00': 'Hello, Maya, ',
-                'ffcc00': 'I need info on Kondraki!',
-                'ffb300': ' I am challenging myself to make a ',
-                'ff9100': 'bossfight and want to start with',
-                'c46f00': ' Kondraki.',
+                'FFFF00': 'Hello, Maya, ',
+                'FFCC00': 'I need info on Kondraki!',
+                'FFB300': ' I am challenging myself to make a ',
+                'FF9100': 'bossfight and want to start with',
+                'C46F00': ' Kondraki.',
                 '965302': ' Have a nice day! (how long did it take you to figure this out)',
                 '000000': ''
             }
@@ -100,11 +117,12 @@
 
         function decodeImage() {
             const fileInput = document.getElementById('uploadImage');
-            const eKeyInput = document.getElementById('eKey');
+            const paletteSelect = document.getElementById('paletteSelect');
             const canvas = document.getElementById('canvas');
             const ctx = canvas.getContext('2d');
+            const imagePreview = document.getElementById('imagePreview');
 
-            const colorToCharMap = getColorToCharMap(eKeyInput.value.trim());
+            const colorToCharMap = getColorToCharMap(paletteSelect.value.trim());
 
             if (fileInput.files && fileInput.files[0]) {
                 const reader = new FileReader();
@@ -112,11 +130,11 @@
                 reader.onload = function (e) {
                     const img = new Image();
                     img.onload = function () {
-                        console.log("Image loaded successfully.");
                         canvas.width = img.width;
                         canvas.height = img.height;
                         ctx.drawImage(img, 0, 0);
-                        
+                        imagePreview.src = img.src; // Show the uploaded image
+
                         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                         let decodedMessage = '';
                         
@@ -127,14 +145,15 @@
                             const hexColor = rgbToHex(r, g, b);
                             const char = colorToCharMap[hexColor];
 
-                            // Append only defined characters
-                            if (char !== undefined && char !== null) {
+                            if (char !== undefined) {
                                 decodedMessage += char;
                             }
                         }
 
-                        console.log(`Decoded message: ${decodedMessage}`);
                         document.getElementById('outputMessage').innerText = decodedMessage || 'No valid colors found.';
+                    };
+                    img.onerror = function () {
+                        alert('Error loading image.');
                     };
                     img.src = e.target.result;
                 };
@@ -142,6 +161,14 @@
             } else {
                 alert('Please upload an image.');
             }
+        }
+
+        function clearOutput() {
+            document.getElementById('outputMessage').innerText = '';
+            document.getElementById('uploadImage').value = '';
+            document.getElementById('canvas').width = 0;
+            document.getElementById('canvas').height = 0;
+            document.getElementById('imagePreview').src = ''; // Clear the image preview
         }
     </script>
 </body>
