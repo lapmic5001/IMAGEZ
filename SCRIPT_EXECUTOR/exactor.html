@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Pixel Matcher with Secret Message</title>
+    <style>
+        #imageDisplay {
+            width: 200px;
+            height: 200px;
+            border: 1px solid #ccc;
+        }
+
+        /* Style for the loading bar */
+        #loadingBarContainer {
+            width: 100%;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        #loadingBar {
+            width: 0%;
+            height: 30px;
+            background-color: #4caf50;
+            border-radius: 10px;
+            text-align: center;
+            line-height: 30px;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Image Pixel Matcher with Secret Message</h1>
+
+    <input type="file" id="imageUpload" accept="image/*"><br><br>
+    <img id="imageDisplay" src="" alt="Uploaded Image"><br><br>
+    <canvas id="canvas" style="display:none;"></canvas>
+
+    <div id="loadingBarContainer">
+        <div id="loadingBar">0%</div>
+    </div>
+
+    <div id="result"></div>
+    <div id="secretMessage"></div>
+
+    <!-- Import JS files containing image pixel data -->
+    <script src="image1.js"></script>
+    <script src="image2.js"></script>
+    <!-- Add more JS files as needed -->
+
+    <script>
+        // Handle image upload and extract pixel data in hex
+        document.getElementById('imageUpload').addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    const img = new Image();
+                    img.onload = function () {
+                        // Display the uploaded image
+                        document.getElementById('imageDisplay').src = event.target.result;
+
+                        // Extract pixel data
+                        const canvas = document.getElementById('canvas');
+                        const ctx = canvas.getContext('2d');
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        ctx.drawImage(img, 0, 0, img.width, img.height);
+
+                        const imageData = ctx.getImageData(0, 0, img.width, img.height);
+                        const hexArray = [];
+                        for (let i = 0; i < imageData.data.length; i += 4) {
+                            const r = imageData.data[i];
+                            const g = imageData.data[i + 1];
+                            const b = imageData.data[i + 2];
+                            const hex = rgbToHex(r, g, b);
+                            hexArray.push(hex);
+                        }
+
+                        // Compare the extracted hex array with all images in the database
+                        compareWithDatabase(hexArray);
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Convert RGB to Hex
+        function rgbToHex(r, g, b) {
+            return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
+        }
+
+        // Compare with all images in the database and update loading bar
+        function compareWithDatabase(uploadedHexArray) {
+            const databaseImages = [image1HexArray, image2HexArray]; // Add more as needed
+            const messages = [message1, message2]; // Add corresponding messages
+            const totalImages = databaseImages.length;
+            let matchFound = false;
+            let progress = 0;
+
+            const loadingBar = document.getElementById('loadingBar');
+
+            databaseImages.forEach((databaseHexArray, index) => {
+                // Simulate time delay for checking each image
+                setTimeout(() => {
+                    progress = ((index + 1) / totalImages) * 100;
+
+                    // If a match is found, speed up the progress
+                    if (arraysEqual(uploadedHexArray, databaseHexArray)) {
+                        document.getElementById('result').textContent = `Match found with Image ${index + 1}!`;
+                        matchFound = true;
+                        progress = 100; // Fill up the progress bar fast if a match is found
+                        
+                        // Display the secret message
+                        document.getElementById('secretMessage').textContent = messages[index];
+                    }
+
+                    // Update the loading bar based on progress
+                    loadingBar.style.width = progress + "%";
+                    loadingBar.textContent = Math.floor(progress) + "%";
+
+                    // If no match is found by the end, show the result
+                    if (index === totalImages - 1 && !matchFound) {
+                        document.getElementById('result').textContent = "No match found.";
+                    }
+                }, index * 500); // Delay of 500ms for each image check to simulate progress
+            });
+        }
+
+        // Helper function to check if two arrays are equal
+        function arraysEqual(arr1, arr2) {
+            if (arr1.length !== arr2.length) return false;
+            for (let i = 0; i < arr1.length; i++) {
+                if (arr1[i] !== arr2[i]) return false;
+            }
+            return true;
+        }
+    </script>
+
+</body>
+
+</html>

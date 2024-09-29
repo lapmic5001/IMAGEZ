@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Hex Color Extractor</title>
+    <style>
+        #imageDisplay {
+            width: 200px;
+            height: 200px;
+            border: 1px solid #ccc;
+            margin-bottom: 10px;
+        }
+        #output {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            background: #f4f4f4;
+            padding: 10px;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Upload Image to Extract Hex Colors</h1>
+
+<input type="file" id="imageUpload" accept="image/*"><br><br>
+<img id="imageDisplay" src="" alt="Uploaded Image"><br><br>
+<canvas id="canvas" style="display:none;"></canvas>
+
+<h3>Extracted Hex Colors (Copy for Encoding):</h3>
+<div id="output">No image uploaded yet.</div>
+
+<script>
+// Handle image upload and extract pixel data in hex
+document.getElementById('imageUpload').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const img = new Image();
+            img.onload = function() {
+                // Display the uploaded image
+                document.getElementById('imageDisplay').src = event.target.result;
+
+                // Extract pixel data
+                const canvas = document.getElementById('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0, 0, img.width, img.height);
+                
+                const imageData = ctx.getImageData(0, 0, img.width, img.height);
+                let hexArray = '';
+                for (let i = 0; i < imageData.data.length; i += 4) {
+                    const r = imageData.data[i];
+                    const g = imageData.data[i + 1];
+                    const b = imageData.data[i + 2];
+                    const hex = rgbToHex(r, g, b);
+                    hexArray += `"${hex}", `; // Format in the desired "#FFFFFF", "#000000", format
+                }
+
+                // Remove the last comma and space
+                hexArray = hexArray.slice(0, -2);
+
+                // Display the extracted hex colors
+                document.getElementById('output').textContent = hexArray;
+            };
+            img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+// Convert RGB to Hex
+function rgbToHex(r, g, b) {
+    return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
+}
+</script>
+
+</body>
+</html>
